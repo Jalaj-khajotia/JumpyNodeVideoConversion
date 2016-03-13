@@ -3,11 +3,30 @@ var Sequelize = require('sequelize');
 var config = require('./config.json');
 var bodyParser = require('body-parser');
 path = require('path');
+var favicon = require('static-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
 var base64 = require('node-base64-image');
 var exec = require('child_process').exec;
 var AWS = require('aws-sdk'),
     s3 = new AWS.S3(),
     params = { Bucket: 'marketing.snipebills', Key: '1.txt', Expires: 20 };
+
+    var audioLocation = 'D:\\down_files\\songs\\song.mp3';
+    var finalVideoLocation = 'convert.mp4';
+    var mergedVideoLocation ='d:\\down_files\\out.mp4';
+    var finalvideopath = path.join(__dirname, 'convert.mp4');
+
+
+var options = {
+  tmpDir: __dirname + '/../public/uploaded/tmp',
+  uploadDir: __dirname + '/../public/uploaded/files',
+  uploadUrl: '/uploaded/files/',
+  storage: {
+    type: 'local'
+  }
+};
+
 
 AWS.config.update({ accessKeyId: 'AKIAIW2EOFJOSJTIGWSQ', secretAccessKey: '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' });
 
@@ -30,13 +49,41 @@ var sequelize = new Sequelize(
 var app = express();
 var port = 3000;
 var router = express.Router(); // will help in adding routes
+var viewRouter = express.Router();
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
+
+if (app.get('env') === 'development') {
+    app.use(function(err, req, res, next) {
+        res.status(err.status || 500);
+        res.render('error', {
+            message: err.message,
+            error: err
+        });
+        next();
+    });
+}
 
 var bookModel = sequelize.define('books', { //define your model
     "bookName": Sequelize.STRING,
     "bookPrice": Sequelize.INTEGER
 });
+
+app.set('views', path.join(__dirname, 'views/home'));
+
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+
+app.use(favicon());
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(cookieParser());
+
+app.use(express.static(path.join(__dirname, 'public')));
+//app.use(express.static(path.join(__dirname, 'node_modules')));
+
+
 app.all('/*', function(req, res, next) {
     // CORS headers
     res.header("Access-Control-Allow-Origin", "*"); // restrict it to the required domain
@@ -51,6 +98,28 @@ app.all('/*', function(req, res, next) {
 });
 app.use('/api', router); //this will add routing to your api.
 //your api endpoint  localhost:3000/api/books
+app.use('/', viewRouter);
+
+app.use(function(req, res, next) {
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+});
+
+app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+        message: err.message,
+        error: {}
+    });
+    next();
+});
+
+var uploadManager = require('./uploader')(router);
+
+viewRouter.get('/', function(req, res) {
+  res.render('index', { title: 'Express' });
+});
 
 router.get('/signed-request', function(req, res) {
     var sig = require('amazon-s3-url-signer');
@@ -58,18 +127,7 @@ router.get('/signed-request', function(req, res) {
     var bucket1 = sig.urlSigner('AKIAIW2EOFJOSJTIGWSQ', 'oO1D4uskO68y6WiaDISIIR3GG0FTJ4x9M1TSh+5b');
 
     var url1 = bucket1.getUrl('GET', '2.jpg', 'marketing.snipebills', 10); //url expires in 10 minutes
-    res.status(200).json(url1);
-    /*  var s3bucket = new AWS.S3({params: {Bucket: 'marketing.snipebills'}});
-    s3bucket.createBucket(function() {
-      var params = {Key: 'myKey', Body: 'Hello!'};
-      s3bucket.upload(params, function(err, data) {
-        if (err) {
-          console.log("Error uploading data: ", err);
-        } else {
-          console.log("Successfully uploaded data to myBucket/myKey");
-        }
-      });
-    });*/
+    res.status(200).json(url1);  
 });
 
 router.get('/sign-policy', function(req, res) {
@@ -99,22 +157,27 @@ router.get('/sign-policy', function(req, res) {
     };
     res.status(200).json(s3Credentials);
 });
-router.get('/fetch-video', function(req, res) {
+viewRouter.get('/fetch-video', function(req, res) {
 
-    var filePath = path.join(__dirname, 'convert.mp4');
-    var stat = fs.statSync(filePath);
+    var stat = fs.statSync(finalvideopath);
 
     res.writeHead(200, {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'video/mp4',
         'Content-Length': stat.size
     });
+    console.log(finalvideopath);
 
-    var readStream = fs.createReadStream(filePath);
+    var readStream = fs.createReadStream(finalvideopath);
     // We replaced all the event handlers with a simple call to readStream.pipe()
     readStream.pipe(res);
 
     //res.status(200).json('video');
 
+});
+
+router.post('/uploadImages', function(req, res) {
+console.log(req.file);
+ res.status(200).json("uploaded"); 
 });
 router.post('/updateimg', function(req, res) {
 
@@ -195,7 +258,7 @@ router.post('/process-video', function(req, res) {
     var readFile = function(callback) {
         if (files.length > 0) {
             var file = files.shift();
-            var filew = fs.createWriteStream(req.body.files[i]);
+            var filew = fs.createWriteStream('down_files/'+ req.body.files[i]);
             console.log('file being created ' + req.body.files[i]);
             console.log('file being written ' + 'https://s3-us-west-2.amazonaws.com/jumpy007/' + req.body.files[i]);
             var request = http.get('https://s3-us-west-2.amazonaws.com/jumpy007/' + req.body.files[i], function(response) {
@@ -244,7 +307,7 @@ router.post('/process-video', function(req, res) {
             if (allFiles.length > 0) {
                 var name = allFiles.shift();
                 console.log(name + ' file being processed');
-                var proc = ffmpeg({ source: name, nolog: false }) //%03d.jpg
+                var proc = ffmpeg({ source:'down_files/'+ name, nolog: false }) //%03d.jpg
                     // loop for 5 seconds
                     .loop(5)
                     // using 25 fps
@@ -253,7 +316,7 @@ router.post('/process-video', function(req, res) {
                     //.withFps(1)
                     // setup event handlers
                     .on('end', function() {
-                        console.log(name + ' has been converted');
+                        console.log(name + 'image has been converted');
                         i++;
                         convertfiles(callback);
                     })
@@ -261,8 +324,7 @@ router.post('/process-video', function(req, res) {
                         console.log(fles[i] + ' an error happened: ' + err.message);
                     })
                     // save to file
-                    .save(i + '.avi');
-
+                    .save('down_files/'+ i + '.avi');
 
             } else {
                 callback();
@@ -276,7 +338,7 @@ router.post('/process-video', function(req, res) {
         function AddAudio(callback) {
             console.log('adding audio started');
             var ffmpegpath = 'C:\\ffmpeg-20160301-git-1c7e2cf-win64-static\\bin\\ffmpeg';
-            var cmd = ffmpegpath + ' -i out.mp4 -i D:\\song.mp3 -codec copy -shortest convert.mp4';
+            var cmd = ffmpegpath + ' -i d:\\down_files\\out.mp4 -i '+ audioLocation +' -codec copy -shortest '+ finalVideoLocation;
             //del/f convert.mp4
             exec('del/f convert.mp4', function(error, stdout, stderr) {
                 console.log('convert.avi deleted' + error + stdout + stderr);
@@ -287,15 +349,13 @@ router.post('/process-video', function(req, res) {
                 });
                 // command output is in stdout
             });
-
         }
 
         function mergeVideos() {
-            var firstFile = "0.avi";
-            var secondFile = "1.avi";
-            /*
-            var thirdFile = "third.mov";*/
-            var outPath = "out.mp4";
+            var firstFile = "down_files\\0.avi";
+            var secondFile = "down_files\\1.avi";
+                        /*
+            var thirdFile = "third.mov";*/        
 
             var proc = ffmpeg(firstFile)
                 .input(secondFile)
@@ -309,14 +369,11 @@ router.post('/process-video', function(req, res) {
                             res.status(200).json("Done");
                         }, 4000);
                     });
-
-
-
                 })
                 .on('error', function(err) {
                     console.log('an error happened: ' + err.message);
                 })
-                .mergeToFile(outPath);
+                .mergeToFile(mergedVideoLocation);
         }
 
         /*   var proc = ffmpeg({ source: 'image1.png', nolog: false }) //%03d.jpg
@@ -340,46 +397,10 @@ router.post('/process-video', function(req, res) {
                .save('2.avi');*/
     }
 });
-router.put('/book/:id', function(req, res) {
-    var data = {
-        id: req.params.id,
-        bookName: req.body.bookName,
-        bookPrice: req.body.bookPrice
-    };
-
-    bookModel.update(data, {
-        where: {
-            id: data.id
-        }
-    }).
-    then(function(book) {
-        res.status(200).json(book);
-    }, function(error) {
-        res.status(500).send(error);
-    });
-});
-
-router.delete('/book/:id', function(req, res) {
-    var data = {
-        id: req.params.id
-    };
-
-    bookModel.destroy({
-        where: {
-
-            id: data.id
-
-        }
-    }).
-    then(function(book) {
-        res.status(200).json(book);
-    }, function(error) {
-        res.status(500).send(error);
-    });
-});
 
 
-app.listen(port, function() {
+/*app.listen(port, function() {
 
 });
-console.log('my api is running on port:' + port);
+console.log('my api is running on port:' + port);*/
+module.exports = app;
