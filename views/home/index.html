@@ -20,6 +20,13 @@
     <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/image-picker.css">
+    <style type="text/css">
+    canvas {
+        border-width: 1px;
+        border-style: solid;
+        border-color: #333;
+    }
+    </style>
     <style>
     ul li {
         padding-top: 10px;
@@ -117,7 +124,8 @@
                 <div class="row working-img">
                     <input type='image' id="edit-btn" src='http://images.aviary.com/images/edit-photo.png' value='Edit photo' onclick="return launchEditor('image1', 'http://images.aviary.com/imagesv5/feather_default.jpg');" />
                     <div class="col">
-                        <img id="selectedimg" class="img_awesome" src="" style="width:360px; max-height:500px;">
+                        <img id="selectedimg" class="img_awesome hide" src="" style="width:360px; max-height:500px;">
+                        <canvas id="canvas" width="360" height="500"></canvas>
                     </div>
                 </div>
             </div>
@@ -134,8 +142,11 @@
                     <div class="col">
                         <button id="gen-video">Generate Video</button>
                     </div>
-                    <div class="col " >
+                    <div class="col ">
                         <button id="watermark">Add watermark</button>
+                    </div>
+                    <div class="col">
+                        <button id="download">Download Image</button>
                     </div>
                 </div>
                 <h3>Your Video</h3>
@@ -146,11 +157,16 @@
                  <img style="width: 70px; height: 75px; margin-top: 6px;" src="bower_components/SVG-Loaders/svg-loaders/puff.svg" /> -->
             </div>
         </div>
+        <!-- <div class="row" style="padding-top:30px; ">
+            <div class="span4" style="margin-left: 80px;">
+                <canvas id="canvas" width="500" height="500"></canvas>
+            </div>
+        </div> -->
     </div>
     </div>
     <!-- Masthead
 ================================================== -->
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="js/jquery.min.js"></script>
     <script src="js/jquery.smooth-scroll.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/retro.js"></script>
@@ -159,6 +175,7 @@
     <script type="text/javascript" src="http://feather.aviary.com/imaging/v3/editor.js"></script>
     <script type="text/javascript" src="js/js.cookie.js"></script>
     <script type="text/javascript" src="js/jquery.watermark.js"></script>
+    <script type="text/javascript" src="js/fabric.js"></script>
     <script type="text/javascript">
     $(document).ready(function() {
         AWS.config.update({
@@ -262,9 +279,9 @@
                     }
                     reader.readAsDataURL(input.files[0]);
                     console.log(typeof(input.files[0]));
-                    uploadS3(input.files[0], function() {
-                        $('#loading').fadeOut();
-                    });
+                    /* uploadS3(input.files[0], function() {
+                         $('#loading').fadeOut();
+                     });*/
                 }
             }
             readURL(this);
@@ -311,23 +328,31 @@
         }
         var imageName = "";
 
-        $('body').on('click', '.thumbnail', function() {
-            $(".image").css("border", "0");
-            $(".image").css("border", "0");
-            $('.thumbnail').removeClass('selected');
-            $(this).toggleClass('selected');
-            $('#selectedimg').attr('src', $('.thumbnail.selected').find('.image.image_picker_image').attr('src'));
-            var imageName = $('.thumbnail.selected').find('.image.image_picker_image').attr("name");
-            Cookies.set('imageName', imageName);
-            console.log(imageName);
-            //  $(this).css("border", "14px double green");
-        });
+      
+
         $('#edit-btn').click(function() {
             imageName = Cookies.get('imageName');
             var url = 'https://s3-us-west-2.amazonaws.com/jumpy007/' + imageName;
             console.log(url);
             launchEditor('selectedimg', url);
         });
+
+        function download(url, name) {
+            // make the link. set the href and download. emulate dom click
+            $('<a>').attr({
+                href: url,
+                download: name
+            })[0].click();
+        }
+
+        function downloadFabric(canvas, name) {
+            //  convert the canvas to a data url and download it.
+            download(canvas.toDataURL(), name + '.png');
+        }
+        $('#download').click(function() {
+            var canvas = new fabric.Canvas("canvas");
+            downloadFabric(canvas, 'abc');
+        })
 
         $("#gen-video").click(function() {
             $('#video').addClass('loading');
@@ -344,22 +369,98 @@
                 video.play()
             });
         })
-        $('body').on('click', '#watermark', function() {
-       /*     $('.img_awesome').watermark({
-                text: $('#input01').val(),
-                textWidth: 100,
-                gravity: 'w',
-                opacity: 1,
-                margin: 12
-            });*/
-            $('.img_awesome').watermark({
-                text: $('#input01').val(),
-                textWidth: 1000,textColor:'black',
-                gravity: 'n',textSize: 80,
-                opacity: 1,
-                margin: 30
+
+        function drawImage() {
+            var ctx = $("canvas")[0].getContext("2d"),
+                img = new Image();
+
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 500, 500);
+                $("span").text("Loaded.");
+            };
+            img.src = "http://photojournal.jpl.nasa.gov/jpeg/PIA17555.jpg";
+            $("span").text("Loading...");
+        }
+
+          $('body').on('click', '.thumbnail', function() {
+            $(".image").css("border", "0");
+            $(".image").css("border", "0");
+            $('.thumbnail').removeClass('selected');
+            $(this).toggleClass('selected');
+            /* var img = $('#selectedimg').attr('src', $('.thumbnail.selected').find('.image.image_picker_image').attr('src'));*/
+            var imageName = $('.thumbnail.selected').find('.image.image_picker_image').attr("name");
+            Cookies.set('imageName', imageName);
+
+            var originalImg = $('.thumbnail.selected').find('.image.image_picker_image');
+            var img = new Image();
+            /*  var ctx = $("#canvas")[0].getContext("2d");
+              img.onload = function() {
+                  ctx.drawImage(img, 0, 0, 350, 500);
+                  $("span").text("Loaded.");
+              };*/
+            img.src = originalImg.attr("src");
+            var canvas = new fabric.Canvas("canvas");
+            canvas.setBackgroundImage(img.src, canvas.renderAll.bind(canvas), {
+                backgroundImageOpacity: 1,
+                width: 360,
+                height: 500
             });
-            console.log('watermark added');
+            console.log(canvas);
+               var object = new fabric.IText("NEW TEXT", {
+                fontFamily: "Arial",
+                left: 150,
+                top: 100,
+                fontSize: 24,
+                textAlign: "left",
+                fill: "#000000"
+            });
+             canvas.add(object);
+          //  canvas.renderAll();
+             //Cookies.set('canvas', JSON.stringify(canvas));
+            canvas.renderAll();
+            //  console.log(canvas.getScaleX());
+            //  $(this).css("border", "14px double green");
+        });
+
+        $('body').on('click', '#watermark', function() {
+
+            /*  $('.img_awesome').watermark({
+                  text: $('#input01').val(),
+                  textWidth: 1000,
+                  textColor: 'black',
+                  gravity: 'n',
+                  textSize: 80,
+                  opacity: 1,
+                  margin: 30
+              });
+              console.log('watermark added');*/
+
+            /*  fabric.util.loadImage('http://localhost:3000/img/2.jpg', function(img) {
+                  object.setPatternFill({
+                      source: img,
+                      repeat: 'repeat'
+                  });
+                  canvas.renderAll();
+              });*/
+           // var canvas = new fabric.Canvas("canvas");
+            /*     canvas.setBackgroundImage('http://localhost:3000/img/2.jpg', canvas.renderAll.bind(canvas), {
+                     backgroundImageOpacity: 1,
+                     backgroundImageStretch: false
+                 });*/
+
+            var object = new fabric.IText("NEW TEXT", {
+                fontFamily: "Arial",
+                left: 150,
+                top: 100,
+                fontSize: 24,
+                textAlign: "left",
+                fill: "#000000"
+            });
+             canvas.add(object);
+            canvas.renderAll();
+          // var canvas = JSON.parse(Cookies.get('canvas'));
+           
+            console.log('object added');
         });
 
         $('#video').on('loadstart', function(event) {
