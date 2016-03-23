@@ -12,19 +12,19 @@ var AWS = require('aws-sdk'),
     s3 = new AWS.S3(),
     params = { Bucket: 'marketing.snipebills', Key: '1.txt', Expires: 20 };
 
-    var audioLocation = 'D:\\down_files\\songs\\song.mp3';
-    var finalVideoLocation = 'convert.mp4';
-    var mergedVideoLocation ='d:\\down_files\\out.mp4';
-    var finalvideopath = path.join(__dirname, 'convert.mp4');
+var audioLocation = 'D:\\down_files\\songs\\song.mp3';
+var finalVideoLocation = 'convert.mp4';
+var mergedVideoLocation = 'd:\\down_files\\out.mp4';
+var finalvideopath = path.join(__dirname, 'convert.mp4');
 
 
 var options = {
-  tmpDir: __dirname + '/../public/uploaded/tmp',
-  uploadDir: __dirname + '/../public/uploaded/files',
-  uploadUrl: '/uploaded/files/',
-  storage: {
-    type: 'local'
-  }
+    tmpDir: __dirname + '/../public/uploaded/tmp',
+    uploadDir: __dirname + '/../public/uploaded/files',
+    uploadUrl: '/uploaded/files/',
+    storage: {
+        type: 'local'
+    }
 };
 
 
@@ -50,6 +50,7 @@ var app = express();
 var port = 3000;
 var router = express.Router(); // will help in adding routes
 var viewRouter = express.Router();
+app.use(bodyParser({limit: '50mb'}));
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
 
@@ -118,7 +119,7 @@ app.use(function(err, req, res, next) {
 var uploadManager = require('./uploader')(router);
 
 viewRouter.get('/', function(req, res) {
-  res.render('index', { title: 'Express' });
+    res.render('index', { title: 'Express' });
 });
 
 router.get('/signed-request', function(req, res) {
@@ -127,7 +128,7 @@ router.get('/signed-request', function(req, res) {
     var bucket1 = sig.urlSigner('AKIAIW2EOFJOSJTIGWSQ', 'oO1D4uskO68y6WiaDISIIR3GG0FTJ4x9M1TSh+5b');
 
     var url1 = bucket1.getUrl('GET', '2.jpg', 'marketing.snipebills', 10); //url expires in 10 minutes
-    res.status(200).json(url1);  
+    res.status(200).json(url1);
 });
 
 router.get('/sign-policy', function(req, res) {
@@ -176,21 +177,22 @@ viewRouter.get('/fetch-video', function(req, res) {
 });
 
 router.post('/uploadImages', function(req, res) {
-console.log(req.file);
- res.status(200).json("uploaded"); 
+    console.log(req.file);
+    res.status(200).json("uploaded");
 });
 router.post('/updateimg', function(req, res) {
+   // console.log( req.body.url);
 
     var imgurl = req.body.url;
     var imagname = req.body.key;
 
-  /*  console.log(req.body.url);
-    var data;
-    var filew = fs.createWriteStream(imagname);
-    var request = http.get(imgurl, function(response) {
-        data = response;
-        response.pipe(filew);
-    });*/
+    /*  console.log(req.body.url);
+      var data;
+      var filew = fs.createWriteStream(imagname);
+      var request = http.get(imgurl, function(response) {
+          data = response;
+          response.pipe(filew);
+      });*/
 
     AWS.config.update({
         accessKeyId: 'AKIAIW2EOFJOSJTIGWSQ',
@@ -214,7 +216,7 @@ router.post('/updateimg', function(req, res) {
             // ACL: ' public-read ',
             Body: file,
             ContentEncoding: 'base64',
-    ContentType: 'image/jpeg'
+            ContentType: 'image/jpeg'
         };
 
         s3.putObject(params, function(err, data) {
@@ -227,15 +229,18 @@ router.post('/updateimg', function(req, res) {
             } // successful response
         });
     }
-    var options = { string: true };
 
-    base64.base64encoder(imgurl, options, function(err, image) {
+    var options = { string: true };
+  var buf = new Buffer(imgurl.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+   uploadS3(buf, imagname);
+  /*  base64.base64encoder(imgurl, options, function(err, image) {
         if (err) {
             console.log(err);
+            console.log(image);
         }
-        var buf = new Buffer(image.replace(/^data:image\/\w+;base64,/, ""),'base64')
+        var buf = new Buffer(image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
         uploadS3(buf, imagname);
-    });
+    });*/
 
 });
 router.post('/process-video', function(req, res) {
@@ -258,7 +263,7 @@ router.post('/process-video', function(req, res) {
     var readFile = function(callback) {
         if (files.length > 0) {
             var file = files.shift();
-            var filew = fs.createWriteStream('down_files/'+ req.body.files[i]);
+            var filew = fs.createWriteStream('down_files/' + req.body.files[i]);
             console.log('file being created ' + req.body.files[i]);
             console.log('file being written ' + 'https://s3-us-west-2.amazonaws.com/jumpy007/' + req.body.files[i]);
             var request = http.get('https://s3-us-west-2.amazonaws.com/jumpy007/' + req.body.files[i], function(response) {
@@ -307,7 +312,7 @@ router.post('/process-video', function(req, res) {
             if (allFiles.length > 0) {
                 var name = allFiles.shift();
                 console.log(name + ' file being processed');
-                var proc = ffmpeg({ source:'down_files/'+ name, nolog: false }) //%03d.jpg
+                var proc = ffmpeg({ source: 'down_files/' + name, nolog: false }) //%03d.jpg
                     // loop for 5 seconds
                     .loop(5)
                     // using 25 fps
@@ -324,7 +329,7 @@ router.post('/process-video', function(req, res) {
                         console.log(fles[i] + ' an error happened: ' + err.message);
                     })
                     // save to file
-                    .save('down_files/'+ i + '.avi');
+                    .save('down_files/' + i + '.avi');
 
             } else {
                 callback();
@@ -338,7 +343,7 @@ router.post('/process-video', function(req, res) {
         function AddAudio(callback) {
             console.log('adding audio started');
             var ffmpegpath = 'C:\\ffmpeg-20160301-git-1c7e2cf-win64-static\\bin\\ffmpeg';
-            var cmd = ffmpegpath + ' -i d:\\down_files\\out.mp4 -i '+ audioLocation +' -codec copy -shortest '+ finalVideoLocation;
+            var cmd = ffmpegpath + ' -i d:\\down_files\\out.mp4 -i ' + audioLocation + ' -codec copy -shortest ' + finalVideoLocation;
             //del/f convert.mp4
             exec('del/f convert.mp4', function(error, stdout, stderr) {
                 console.log('convert.avi deleted' + error + stdout + stderr);
@@ -354,8 +359,8 @@ router.post('/process-video', function(req, res) {
         function mergeVideos() {
             var firstFile = "down_files\\0.avi";
             var secondFile = "down_files\\1.avi";
-                        /*
-            var thirdFile = "third.mov";*/        
+            /*
+            var thirdFile = "third.mov";*/
 
             var proc = ffmpeg(firstFile)
                 .input(secondFile)

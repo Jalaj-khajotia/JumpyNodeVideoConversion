@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -20,45 +19,8 @@
     <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/image-picker.css">
-    <style type="text/css">
-    canvas {
-        border-width: 1px;
-        border-style: solid;
-        border-color: #333;
-    }
-    </style>
-    <style>
-    ul li {
-        padding-top: 10px;
-    }
-    
-    .image-selected {
-        padding: 5px 5px 0px 5px;
-        float: left;
-        background: #0088cc;
-    }
-    
-    .thumbnail.selected {
-        background: #0088cc;
-    }
-    
-    .working-img {
-        padding: 10px 0 0 20px;
-        height: 500px;
-        background: white;
-    }
-    
-    #edit-btn {
-        float: right;
-        margin-bottom: 5px;
-        position: absolute;
-    }
-    
-    video.loading {
-        background: black url(bower_components/SVG-Loaders/svg-loaders/puff.svg) center center no-repeat;
-        background-color: #34495E;
-    }
-    </style>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/cropper.css">
 </head>
 
 <body id="top" class="index" data-spy="scroll" data-target=".scrollnav" data-offset="95">
@@ -75,31 +37,28 @@
                 <a class="brand" href="index.html">Jumpy Marketing Solutions</a>
                 <div class="nav-collapse collapse" id="main-menu">
                     <ul class="nav pull-right">
-                        <!--  <li><a href="components.html">Components</a></li>
-         <li class="dropdown" id="preview-menu">
-           <a class="dropdown-toggle" data-toggle="dropdown" href="#">Download <b class="caret"></b></a>
-           <ul class="dropdown-menu">
-             <li><a target="_blank" href="css/bootstrap.min.css">bootstrap.min.css</a></li>
-             <li><a target="_blank" href="css/bootstrap.css">bootstrap.css</a></li>
-             <li class="divider"></li>
-             <li><a target="_blank" href="less/variables.less">variables.less</a></li>
-             <li><a target="_blank" href="less/retro.less">retro.less</a></li>
-           </ul> -->
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
-    <div class="container">
+    <div class="container theme-showcase">
         <!--   <svg fill="#fff" width="140" height="64" viewBox="0 0 140 64" xmlns="http://www.w3.org/2000/svg"> -->
+        <div class="row" id="cntr-btn">
+            <input type="text" class="input-xlarge" id="input01" placeholder="Each Slide Length">
+            <button id="gen-video">Generate Video</button>
+            <button id="watermark">Edit Image</button>
+            <button id="download">Upload Image</button>
+            <button id="crop">Crop</button>
+        </div>
         <div id="loading" class="hide" style="  text-align: center;left: 130px; top: 68px; position: absolute; ">
             <b>Uploading Content</b>
             <div style="background-color: #2980B9; width: 70px;left: 30px;position: relative; ">
                 <img style="width: 40px; height: 25px; margin-top: 6px;" src="bower_components/SVG-Loaders/svg-loaders/bars.svg" />
             </div>
         </div>
-        <div class="row" style="padding-top:30px; ">
+        <div class="row" style="padding-top:5px; ">
             <div class="span4" style="padding-top:30px; height: 482px; width: 290px; overflow-y: scroll;">
                 <ul style="list-style: none;">
                     <li>
@@ -122,47 +81,29 @@
                 <div class="row">
                 </div>
                 <div class="row working-img">
-                    <input type='image' id="edit-btn" src='http://images.aviary.com/images/edit-photo.png' value='Edit photo' onclick="return launchEditor('image1', 'http://images.aviary.com/imagesv5/feather_default.jpg');" />
-                    <div class="col">
+                   <!--  <input type='image' id="edit-btn" src='http://images.aviary.com/images/edit-photo.png' value='Edit photo' onclick="return launchEditor('image1', 'http://images.aviary.com/imagesv5/feather_default.jpg');" /> -->
+                    <div class="col" id="canvas-row">
                         <img id="selectedimg" class="img_awesome hide" src="" style="width:360px; max-height:500px;">
-                        <canvas id="canvas" width="360" height="500"></canvas>
+                        <canvas id="canvas" width="800" height="500"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="span4" style="margin-left: 80px;">
-                <div class="row">
-                    <div class="col">
-                        <div class="control-group">
-                            <label class="control-label" for="input01">Slide Length</label>
-                            <div class="controls">
-                                <input type="text" class="input-xlarge" id="input01">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <button id="gen-video">Generate Video</button>
-                    </div>
-                    <div class="col ">
-                        <button id="watermark">Add watermark</button>
-                    </div>
-                    <div class="col">
-                        <button id="download">Download Image</button>
-                    </div>
-                </div>
-                <h3>Your Video</h3>
-                <video id="video" class="" width="320" height="240" controls>
-                    <source src="" type="video/mp4"> Your browser does not support the video tag.
-                </video>
-                <!-- <div style="background-color:  #E74C3C; width: 70px;left: 30px;position: relative; ">
+        </div>
+        <div class="row" id="video-screen">
+            <div class="panel-heading">
+                <h3 class="panel-title">Your Video</h3>
+            </div>
+            <video id="video" class="" width="320" height="240" controls>
+                <source src="" type="video/mp4"> Your browser does not support the video tag.
+            </video>
+            <!-- <div style="background-color:  #E74C3C; width: 70px;left: 30px;position: relative; ">
                  <img style="width: 70px; height: 75px; margin-top: 6px;" src="bower_components/SVG-Loaders/svg-loaders/puff.svg" /> -->
-            </div>
         </div>
         <!-- <div class="row" style="padding-top:30px; ">
             <div class="span4" style="margin-left: 80px;">
                 <canvas id="canvas" width="500" height="500"></canvas>
             </div>
         </div> -->
-    </div>
     </div>
     <!-- Masthead
 ================================================== -->
@@ -172,305 +113,12 @@
     <script src="js/retro.js"></script>
     <script type="text/javascript" src="js/aws-sdk/dist/aws-sdk.js"></script>
     <script type="text/javascript" src="js/image-picker.js"></script>
+    <script type="text/javascript" src="js/cropper.js"></script>
     <script type="text/javascript" src="http://feather.aviary.com/imaging/v3/editor.js"></script>
     <script type="text/javascript" src="js/js.cookie.js"></script>
     <script type="text/javascript" src="js/jquery.watermark.js"></script>
     <script type="text/javascript" src="js/fabric.js"></script>
-    <script type="text/javascript">
-    $(document).ready(function() {
-        AWS.config.update({
-            accessKeyId: 'AKIAIW2EOFJOSJTIGWSQ',
-            secretAccessKey: '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'
-        });
-        AWS.config.region = 'us-west-2';
-        //s3.getObject({Bucket: 'bucketName', Key: 'keyName'});
-
-        function uploadS3(file, callback) {
-            console.log(file);
-            // var params = {Bucket: 'jumpy007', Key: file.name, Body: file};
-            var s3 = new AWS.S3();
-            /*s3.upload(params, function(err, data) {
-              console.log(err, data);
-            });*/
-            var params = {
-                Bucket: 'jumpy007',
-                /* required */
-                Key: file.name,
-                /* required */
-                // ACL: ' public-read ',
-                Body: file
-            };
-            s3.putObject(params, function(err, data) {
-                if (err) console.log(err, err.stack); // an error occurred
-                else {
-                    console.log(data);
-                    callback();
-                } // successful response
-            });
-            /*
-
-                  function upload_filetoS3(file, signed_request) {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open("PUT", signed_request);
-                    xhr.setRequestHeader('x-amz-acl', 'public-read');
-                    xhr.onload = function() {
-                      if (xhr.status === 200) {
-                        console.log(xhr);
-                       console.log('uploaded');
-                      }
-                    };
-                    xhr.onerror = function() {
-                      alert("Could not upload file.");
-                    };
-                    xhr.send(file);
-                  }
-                  upload_filetoS3(file,'http://s3.amazonaws.com/marketing.snipebills/2.jpg?Expires=1457185956&AWSAccessKeyId=AKIAIW2EOFJOSJTIGWSQ&Signature=KE03frnAEXTe6OTqf3sGGAfRk%2Bc%3D');*/
-            /* http://s3.amazonaws.com/marketing.snipebills/2.png?Expires=1457179269&AWSAccessKeyId=AKIAIW2EOFJOSJTIGWSQ&Signature=LF%2BXCsU58rY4ykXrH%2FLEBot%2Fll8%3D
-                    var xhr = new XMLHttpRequest(),
-                        fd = new FormData();
-
-                    // Populate the Post paramters.
-                    fd.append('key', file.name);
-                    fd.append('AWSAccessKeyId', 'AKIAJXP4OOA2RVCCFRHA');
-                    fd.append('acl', 'public-read');
-                    fd.append('success_action_redirect', "https://s3.amazonaws.com/marketing.snipebills/upload-success.html")
-                    fd.append('policy', "eyJleHBpcmF0aW9uIjoiMjAxNi0xMi0xM1QwMDowMDowMFoiLCJjb25kaXRpb25zIjpbeyJidWNrZXQiOiJtYXJrZXRpbmcuc25pcGViaWxscyJ9LFsic3RhcnRzLXdpdGgiLCIka2V5IiwiMSJdLHsiYWNsIjoicHVibGljLXJlYWQifSx7InN1Y2Nlc3NfYWN0aW9uX3JlZGlyZWN0IjoiaHR0cHM6Ly9zMy5hbWF6b25hd3MuY29tL21hcmtldGluZy5zbmlwZWJpbGxzL3VwbG9hZC1zdWNjZXNzLmh0bWwifSxbInN0YXJ0cy13aXRoIiwiJENvbnRlbnQtVHlwZSIsImltYWdlL2pwZWciXV19")
-                     fd.append('signature', 'JJyG28YuePQyeL8srpdmyNBWQLM=')
-                    fd.append('Content-Type', 'image/jpeg')
-                        // This file object is retrieved from a file input.
-                    fd.append('file', file);
-                    xhr.open('POST', "http://s3.amazonaws.com/marketing.snipebills", true);
-                    xhr.send(fd);*/
-            // Keep track of upload progress so that we can message
-            // it to the user.
-
-
-            // If the upload completes we should decrement the uploads
-            // currently taking place.
-            /*       var xhr = new XMLHttpRequest();
-    xhr.open("PUT", "http://s3.amazonaws.com/marketing.snipebills/2.png?Expires=1457038275&AWSAccessKeyId=AKIAIW2EOFJOSJTIGWSQ&Signature=9EYLg%2B9TKZWswvoVKMDammQrznE%3D");
-    xhr.setRequestHeader('x-amz-acl', 'public-read');
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-           alert('success');
-        }
-    };
-    xhr.onerror = function() {
-        alert("Could not upload file.");
-    };
-    xhr.send(file);*/
-        }
-        var files = [];
-
-        $('#imgselector').change(function() {
-            $('#loading').fadeIn();
-
-            function readURL(input) {
-                files.push(input.files[0].name);
-                if (input.files && input.files[0]) {
-                    var reader = new FileReader();
-
-                    reader.onload = function(e) {
-                        $('#img-collection')
-                            .append(
-                                $('<li>').append(
-                                    $('<div class="thumbnail">').append(
-                                        $('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', e.target.result))));
-                    }
-                    reader.readAsDataURL(input.files[0]);
-                    console.log(typeof(input.files[0]));
-                    /* uploadS3(input.files[0], function() {
-                         $('#loading').fadeOut();
-                     });*/
-                }
-            }
-            readURL(this);
-        });
-
-        function uploadEditedPhoto(url, name, callback) {
-            // var params = {Bucket: 'jumpy007', Key: file.name, Body: file};
-            $.post("http://localhost:3000/api/updateimg", {
-                "url": url,
-                "key": name
-            }, function(res) {
-                callback();
-                console.log(res);
-            });
-        }
-
-        var featherEditor = new Aviary.Feather({
-            apiKey: '58f7bfc1-afdc-41cb-930a-caf9aca5cd62',
-            theme: 'dark', // Check out our new 'light' and 'dark' themes!
-            tools: 'all',
-            appendTo: '',
-            onSave: function(imageID, newURL) {
-                var img = document.getElementById(imageID);
-                img.src = newURL;
-                console.log(newURL);
-                console.log(typeof(newURL));
-
-                var selectedImg = $('.thumbnail.selected').find('.image.image_picker_image');
-                name = selectedImg.attr("name");
-                selectedImg.attr('src', newURL);
-                uploadEditedPhoto(newURL, name, function() {});
-            },
-            onError: function(errorObj) {
-                alert(errorObj.message);
-            }
-        });
-
-        function launchEditor(id, src) {
-            featherEditor.launch({
-                image: id,
-                url: src
-            });
-            return false;
-        }
-        var imageName = "";
-
-      
-
-        $('#edit-btn').click(function() {
-            imageName = Cookies.get('imageName');
-            var url = 'https://s3-us-west-2.amazonaws.com/jumpy007/' + imageName;
-            console.log(url);
-            launchEditor('selectedimg', url);
-        });
-
-        function download(url, name) {
-            // make the link. set the href and download. emulate dom click
-            $('<a>').attr({
-                href: url,
-                download: name
-            })[0].click();
-        }
-
-        function downloadFabric(canvas, name) {
-            //  convert the canvas to a data url and download it.
-            download(canvas.toDataURL(), name + '.png');
-        }
-        $('#download').click(function() {
-            var canvas = new fabric.Canvas("canvas");
-            downloadFabric(canvas, 'abc');
-        })
-
-        $("#gen-video").click(function() {
-            $('#video').addClass('loading');
-            $.post("http://localhost:3000/api/process-video", {
-                "files": files
-            }, function(res) {
-                console.log(res);
-                var video = document.getElementById('video');
-                var source = document.createElement('source');
-
-                source.setAttribute('src', 'http://localhost:3000/fetch-video');
-
-                video.appendChild(source);
-                video.play()
-            });
-        })
-
-        function drawImage() {
-            var ctx = $("canvas")[0].getContext("2d"),
-                img = new Image();
-
-            img.onload = function() {
-                ctx.drawImage(img, 0, 0, 500, 500);
-                $("span").text("Loaded.");
-            };
-            img.src = "http://photojournal.jpl.nasa.gov/jpeg/PIA17555.jpg";
-            $("span").text("Loading...");
-        }
-
-          $('body').on('click', '.thumbnail', function() {
-            $(".image").css("border", "0");
-            $(".image").css("border", "0");
-            $('.thumbnail').removeClass('selected');
-            $(this).toggleClass('selected');
-            /* var img = $('#selectedimg').attr('src', $('.thumbnail.selected').find('.image.image_picker_image').attr('src'));*/
-            var imageName = $('.thumbnail.selected').find('.image.image_picker_image').attr("name");
-            Cookies.set('imageName', imageName);
-
-            var originalImg = $('.thumbnail.selected').find('.image.image_picker_image');
-            var img = new Image();
-            /*  var ctx = $("#canvas")[0].getContext("2d");
-              img.onload = function() {
-                  ctx.drawImage(img, 0, 0, 350, 500);
-                  $("span").text("Loaded.");
-              };*/
-            img.src = originalImg.attr("src");
-            var canvas = new fabric.Canvas("canvas");
-            canvas.setBackgroundImage(img.src, canvas.renderAll.bind(canvas), {
-                backgroundImageOpacity: 1,
-                width: 360,
-                height: 500
-            });
-            console.log(canvas);
-               var object = new fabric.IText("NEW TEXT", {
-                fontFamily: "Arial",
-                left: 150,
-                top: 100,
-                fontSize: 24,
-                textAlign: "left",
-                fill: "#000000"
-            });
-             canvas.add(object);
-          //  canvas.renderAll();
-             //Cookies.set('canvas', JSON.stringify(canvas));
-            canvas.renderAll();
-            //  console.log(canvas.getScaleX());
-            //  $(this).css("border", "14px double green");
-        });
-
-        $('body').on('click', '#watermark', function() {
-
-            /*  $('.img_awesome').watermark({
-                  text: $('#input01').val(),
-                  textWidth: 1000,
-                  textColor: 'black',
-                  gravity: 'n',
-                  textSize: 80,
-                  opacity: 1,
-                  margin: 30
-              });
-              console.log('watermark added');*/
-
-            /*  fabric.util.loadImage('http://localhost:3000/img/2.jpg', function(img) {
-                  object.setPatternFill({
-                      source: img,
-                      repeat: 'repeat'
-                  });
-                  canvas.renderAll();
-              });*/
-           // var canvas = new fabric.Canvas("canvas");
-            /*     canvas.setBackgroundImage('http://localhost:3000/img/2.jpg', canvas.renderAll.bind(canvas), {
-                     backgroundImageOpacity: 1,
-                     backgroundImageStretch: false
-                 });*/
-
-            var object = new fabric.IText("NEW TEXT", {
-                fontFamily: "Arial",
-                left: 150,
-                top: 100,
-                fontSize: 24,
-                textAlign: "left",
-                fill: "#000000"
-            });
-             canvas.add(object);
-            canvas.renderAll();
-          // var canvas = JSON.parse(Cookies.get('canvas'));
-           
-            console.log('object added');
-        });
-
-        $('#video').on('loadstart', function(event) {
-            $(this).addClass('loading');
-        });
-        $('#video').on('canplay', function(event) {
-            $(this).removeClass('loading');
-        });
-    });
-    </script>
+    <script type="text/javascript" src="js/main.js"></script>
 </body>
 
 </html>
