@@ -48,9 +48,13 @@
         <div class="row" id="cntr-btn">
             <input type="text" class="input-xlarge" id="input01" placeholder="Each Slide Length">
             <button id="gen-video">Generate Video</button>
-            <button id="watermark">Edit Image</button>
-            <button id="download">Upload Image</button>
+            <button id="Edit">Edit Image</button>
+            <button id="Upload">Upload Edited Image</button>
             <button id="crop">Crop</button>
+            <button id="makeImge">Make Image</button>
+            <button id="send-canvas">Send JSON</button>
+            <button id="update-image">Update Image</button>
+            
         </div>
         <div id="loading" class="hide" style="  text-align: center;left: 130px; top: 68px; position: absolute; ">
             <b>Uploading Content</b>
@@ -58,7 +62,9 @@
                 <img style="width: 40px; height: 25px; margin-top: 6px;" src="bower_components/SVG-Loaders/svg-loaders/bars.svg" />
             </div>
         </div>
-        <div class="row" style="padding-top:5px; ">
+         <div class="spinner row" id="spinner2" style="z-index:10; display:none;"></div>
+        <div class="row" style="padding-top:5px;">
+            <div class="spinner" id="spinner" style="left: 15%; display:none"></div>
             <div class="span4" style="padding-top:30px; height: 482px; width: 290px; overflow-y: scroll;">
                 <ul style="list-style: none;">
                     <li>
@@ -79,7 +85,7 @@
             <div class="span4" style="padding-left:20px;">
                 <!-- background-color: #2980B9; -->
                 <div class="row">
-                </div>
+                </div>                
                 <div class="row working-img">
                    <!--  <input type='image' id="edit-btn" src='http://images.aviary.com/images/edit-photo.png' value='Edit photo' onclick="return launchEditor('image1', 'http://images.aviary.com/imagesv5/feather_default.jpg');" /> -->
                     <div class="col" id="canvas-row">
@@ -92,8 +98,8 @@
         <div class="row" id="video-screen">
             <div class="panel-heading">
                 <h3 class="panel-title">Your Video</h3>
-            </div>
-            <video id="video" class="" width="320" height="240" controls>
+            </div>           
+            <video id="video" class="" width="600" height="400" controls>
                 <source src="" type="video/mp4"> Your browser does not support the video tag.
             </video>
             <!-- <div style="background-color:  #E74C3C; width: 70px;left: 30px;position: relative; ">
