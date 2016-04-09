@@ -13,10 +13,12 @@ $(document).ready(function() {
         /*s3.upload(params, function(err, data) {
           console.log(err, data);
         });*/
+        console.log(file);
         var params = {
             Bucket: 'jumpy007',
             /* required */
             Key: file.name,
+            ContentType: 'image/jpeg',
             /* required */
             // ACL: ' public-read ',
             Body: file
@@ -83,27 +85,62 @@ $(document).ready(function() {
         $('#loading').fadeIn();
         $('#spinner').show();
 
-        function readURL(input) {
-            files.push(input.files[0].name);
+        function readURL(input) {           
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
+                var name = "";
+                if (input.files[0].name.indexOf('png') > -1 || input.files[0].name.indexOf('PNG') > -1) {
+                    name = input.files[0].name;
+                } else {
+                    if (input.files[0].name.indexOf('jpg') > -1) {
+                        name = input.files[0].name.substring(0, input.files[0].name.indexOf('jpg')) + 'png';
+                    } else {
+                        name = input.files[0].name.substring(0, input.files[0].name.indexOf('JPG')) + 'png';
+                    }
+                }
+                 files.push(name);
+                console.log('uploaded image name ' + name);
 
                 reader.onload = function(e) {
+                    var imgdata = { "base64": e.target.result, 'filename': name };
+                    $.ajax({
+                        url: 'http://localhost:3000/api/uploadImages',
+                        dataType: 'json',
+                        data: imgdata,
+                        type: 'POST',
+                        success: function(data) {
+                            var index = files.indexOf(Cookies.get('imageName'));
+                            console.log('image arrary updated');
+                            if (index > -1) {
+                                files[index] = 'edited' + name;
+                            }
+                            $('#loading').fadeOut();
+                            $('#img-collection')
+                                .append(
+                                    $('<li>').append(
+                                        $('<div class="thumbnail">').append(
+                                            $('<img class="image image_picker_image" name="' + name + '">').attr('src', 'https://s3-us-west-2.amazonaws.com/jumpy007/' + name))));
+                            // $('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', e.target.result))));
+                            $('.thumbnail').last().append('<a class="delete-photo-a icon mini vis remove3 abs" title="Delete" href="#" rel="2">Delete</a>');
+                            $('#spinner').hide();
+                            console.log(data);
+                        }
+                    });
 
                 }
                 reader.readAsDataURL(input.files[0]);
                 console.log(typeof(input.files[0]));
-                uploadS3(input.files[0], function() {
-                    $('#loading').fadeOut();
-                    $('#img-collection')
-                        .append(
-                            $('<li>').append(
-                                $('<div class="thumbnail">').append(
-                                    $('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', 'https://s3-us-west-2.amazonaws.com/jumpy007/' + input.files[0].name))));
-                    //$('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', e.target.result))));
-                    $('.thumbnail').last().append('<a class="delete-photo-a icon mini vis remove3 abs" title="Delete" href="#" rel="2">Delete</a>');
-                    $('#spinner').hide();
-                });
+                /* uploadS3(input.files[0], function() {
+                     $('#loading').fadeOut();
+                     $('#img-collection')
+                         .append(
+                             $('<li>').append(
+                                 $('<div class="thumbnail">').append(
+                                     $('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', 'https://s3-us-west-2.amazonaws.com/jumpy007/' + input.files[0].name))));
+                     //$('<img class="image image_picker_image" name="' + input.files[0].name + '">').attr('src', e.target.result))));
+                     $('.thumbnail').last().append('<a class="delete-photo-a icon mini vis remove3 abs" title="Delete" href="#" rel="2">Delete</a>');
+                     $('#spinner').hide();
+                 });*/
             }
         }
         readURL(this);
@@ -211,8 +248,8 @@ $(document).ready(function() {
         });
     });
 
-    function UploadEditedImage() {
-        var objectName = 'IMG-20151024-WA0001.jpg';
+    function UploadEditedImage(imgName, srcImg) {
+        var objectName = imgName;
         var img = new Image();
         img.setAttribute('crossOrigin', 'anonymous');
         var canvas = new fabric.Canvas();
@@ -221,14 +258,15 @@ $(document).ready(function() {
             w = this.width;
             h = this.height;
             canvas.setDimensions({ width: w, height: h });
-            canvas.setBackgroundImage(img.src, canvas.renderAll.bind(canvas), {
-                width: w,
-                height: h
-            });
+            console.log(srcImg);
+            /* canvas.setBackgroundImage(img.src , canvas.renderAll.bind(canvas), {
+                 width: w,
+                 height: h
+             }); */
             setTimeout(function() {
                 var image = canvas.toDataURL("image/png"); //.replace("image/png", "image/octet-stream");
                 //console.log(image);
-                var newImg = { "img": image };
+                var newImg = { "img": image, 'filename': imgName };
                 //newImg.src = image;
                 var dta = JSON.stringify(image);
                 $.ajax({
@@ -237,6 +275,11 @@ $(document).ready(function() {
                     data: newImg,
                     type: 'POST',
                     success: function(data) {
+                        var index = files.indexOf(Cookies.get('imageName'));
+                        console.log('image arrary updated');
+                        if (index > -1) {
+                            files[index] = 'edited' + imgName;
+                        }
                         console.log(data);
                     }
                 });
@@ -248,16 +291,33 @@ $(document).ready(function() {
             }, 2000);
             var coki = localStorage.getItem(objectName);
             if (coki !== null) {
-                canvas.loadFromJSON(JSON.parse(coki));
+                var ratio = Cookies.get(objectName + 'ratio');
+                var json = JSON.parse(coki);
+                console.log(json.objects);
+                console.log(json.backgroundImage.width);
+
+                json.backgroundImage.width = json.backgroundImage.width * ratio;
+                json.backgroundImage.height = json.backgroundImage.height * ratio;
+                json.objects[0].left = json.objects[0].left * ratio;
+                json.objects[0].top = json.objects[0].top * ratio;
+                json.objects[0].width = json.objects[0].width * ratio;
+                json.objects[0].height = json.objects[0].height * ratio;
+                json.objects[0].scaleX = json.objects[0].scaleX * ratio;
+                json.objects[0].scaleY = json.objects[0].scaleY * ratio;
+
+                canvas.loadFromJSON(json);
             }
             canvas.renderAll();
             console.log(w + " " + h);
         };
-        img.src = 'http://localhost:3000/img/2.jpg';
+        img.src = srcImg;
     }
 
     $('#update-image').click(function() {
-        UploadEditedImage();
+        var name = Cookies.get('imageName');
+        var originalImg = $('.thumbnail.selected').find('.image.image_picker_image');
+        var srcImg = originalImg.attr("src");
+        UploadEditedImage(name, srcImg);
     });
 
     function drawImage() {
@@ -366,8 +426,10 @@ $(document).ready(function() {
         function updateControls() {
             console.log(JSON.stringify(canvas));
             var newObject = jQuery.extend(true, {}, canvas);
-            newObject.backgroundImage = false;
+            //newObject.backgroundImage = false;
+            var imageName = localStorage.getItem('imageSelected');
             localStorage.setItem(imageName, JSON.stringify(newObject));
+            console.log('json updated');
 
         }
         canvas.on({
@@ -378,8 +440,8 @@ $(document).ready(function() {
         });
         canvas.renderAll();
         setTimeout(function() {
-            var image = canvas.toDataURL("image/png"); //.replace("image/png", "image/octet-stream");
-            localStorage.setItem('imagedown', image);
+            //  var image = canvas.toDataURL("image/png"); //.replace("image/png", "image/octet-stream");
+            // localStorage.setItem('imagedown', image);
         }, 1000);
     }
 
@@ -415,7 +477,6 @@ $(document).ready(function() {
         var img = new Image();
         img.src = originalImg.attr("src");
         if (coki === null) {
-
             // ResizeCanvas(originalImg);
 
 
@@ -454,6 +515,8 @@ $(document).ready(function() {
                 newHeight = imageHeight * ratio;
                 newWidth = imageWidth * ratio;
             }
+            console.log('ratio = ' + imageWidth / newWidth);
+            Cookies.set(imageName + 'ratio', imageWidth / newWidth);
 
             console.log('newWidth= ' + newWidth + " newHeight = " + newHeight);
             /* canvas.clear();
@@ -485,8 +548,9 @@ $(document).ready(function() {
             function updateControls() {
                 console.log(JSON.stringify(canvas));
                 var newObject = jQuery.extend(true, {}, canvas);
-                newObject.backgroundImage = false;
+                // newObject.backgroundImage = false;
                 localStorage.setItem(imageName, JSON.stringify(newObject));
+                console.log('json added');
             }
             canvas.on({
                 'object:moving': updateControls,
